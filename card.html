@@ -124,9 +124,9 @@
     }
 
     document.getElementById("card-contact").innerHTML = [
-      line("Email", formatMaskedEmailHtml(broker.email, broker.id)),
-      line("Phone", `<span class="text-muted">${maskContactPhone(broker.phone, broker.id)}</span>`),
-      line("LinkedIn", formatMaskedLinkedInHtml(broker.linkedin, broker.id)),
+      line("Email", formatContactEmailHtml(broker.email)),
+      line("Phone", `<span class="text-muted">${displayContactPhone(broker.phone)}</span>`),
+      line("LinkedIn", formatContactLinkedInHtml(broker.linkedin)),
     ].join("");
 
     document.getElementById("card-profile").innerHTML = [

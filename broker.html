@@ -105,9 +105,9 @@
     ].join("");
 
     document.getElementById("sec-contact").innerHTML = [
-      `<div class="contact-line"><span class="contact-icon">✉</span>${formatMaskedEmailHtml(broker.email, broker.id)}</div>`,
-      `<div class="contact-line"><span class="contact-icon">☎</span><span class="text-muted">${maskContactPhone(broker.phone, broker.id)}</span></div>`,
-      `<div class="contact-line"><span class="contact-icon">in</span><span class="text-muted">${maskLinkedIn(broker.linkedin, broker.id)}</span></div>`,
+      `<div class="contact-line"><span class="contact-icon">✉</span>${formatContactEmailHtml(broker.email)}</div>`,
+      `<div class="contact-line"><span class="contact-icon">☎</span><span class="text-muted">${displayContactPhone(broker.phone)}</span></div>`,
+      `<div class="contact-line"><span class="contact-icon">in</span>${formatContactLinkedInHtml(broker.linkedin)}</div>`,
     ].join("");
 
     document.getElementById("sec-sales").innerHTML = [

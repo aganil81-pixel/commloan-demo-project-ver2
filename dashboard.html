@@ -78,13 +78,12 @@
     if (cfg.eventFunnel) {
       const panel = document.getElementById("event-panel");
       panel.classList.remove("hidden");
-      const highlyQ = cfg.highlyQualifiedCount || 82;
       const evName = cfg.eventName || (typeof EVENT_SUMMARY !== "undefined" ? EVENT_SUMMARY.eventName : "CRE Finance Summit");
       document.getElementById("event-funnel-text").textContent =
-        evName + ": " + formatCount(cfg.contactsProcessed) + " attendees → " +
-        formatCount(cfg.qualifiedCount) + " broker prospects → " +
-        formatCount(highlyQ) + " qualified → " +
-        formatCount(cfg.priorityCount) + " priority targets";
+        evName + ": " + formatCount(m.totalContacts) + " attendees → " +
+        formatCount(m.qualifiedBrokers) + " broker prospects → " +
+        formatCount(m.highlyQualified) + " qualified → " +
+        formatCount(m.priorityTargets) + " priority targets";
     }
   </script>
 </body>

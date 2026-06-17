@@ -104,9 +104,9 @@
 
     function contactCells(b) {
       return `
-        <td>${formatMaskedEmailHtml(b.email, b.id)}</td>
-        <td><span class="text-muted">${maskContactPhone(b.phone, b.id)}</span></td>
-        <td>${formatMaskedLinkedInHtml(b.linkedin, b.id)}</td>
+        <td>${formatContactEmailHtml(b.email)}</td>
+        <td><span class="text-muted">${displayContactPhone(b.phone)}</span></td>
+        <td>${formatContactLinkedInHtml(b.linkedin)}</td>
       `;
     }
 

@@ -54,3 +54,29 @@ function enrichBroker(broker) {
 function enrichAllBrokers(brokers) {
   return brokers.map(enrichBroker);
 }
+
+/** Cap Priority tier count and align High confidence to scenario funnel (e.g. 82 / 25 event). */
+function normalizeScenarioTiers(brokers, cfg) {
+  if (!brokers.length) return brokers;
+  const priorityCap = cfg.priorityCount ?? brokers.length;
+  const highlyCap = cfg.highlyQualifiedCount ?? null;
+  const sorted = [...brokers].sort((a, b) => (b.score || 0) - (a.score || 0));
+  const priorityIds = new Set(sorted.slice(0, priorityCap).map((b) => b.id));
+  const highlyIds = highlyCap != null
+    ? new Set(sorted.slice(0, highlyCap).map((b) => b.id))
+    : null;
+
+  return brokers.map((b) => {
+    const score = b.score || 0;
+    let priorityTier = "Low Priority";
+    if (priorityIds.has(b.id)) priorityTier = "Priority";
+    else if (score >= 50) priorityTier = "Nurture";
+
+    let confidence = b.confidence;
+    if (highlyIds) {
+      confidence = highlyIds.has(b.id) ? "High" : (confidence === "High" ? "Medium" : confidence);
+    }
+
+    return { ...b, priorityTier, confidence };
+  });
+}

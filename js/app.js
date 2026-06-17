@@ -161,7 +161,7 @@ function loadBrokersForRun(scenarioKey) {
   } else if (key === "directory") {
     raw = typeof DIRECTORY_BROKERS_RAW !== "undefined" ? DIRECTORY_BROKERS_RAW : [];
   } else if (key === "event") {
-    if (typeof PRIORITY_TARGETS_RAW !== "undefined") raw = PRIORITY_TARGETS_RAW.slice();
+    if (typeof PRIORITY_TARGETS_RAW !== "undefined") raw = PRIORITY_TARGETS_RAW.slice(0, cfg.qualifiedCount);
     const need = cfg.qualifiedCount - raw.length;
     if (need > 0) {
       raw = raw.concat(
@@ -184,7 +184,18 @@ function loadBrokersForRun(scenarioKey) {
     raw = buildSyntheticBrokers(12, { idPrefix: "syn-" });
   }
 
-  if (p2) return enrichAllBrokers(raw);
+  if (p2) {
+    const enriched = enrichAllBrokers(raw);
+    return normalizeScenarioTiers(enriched, cfg).map(withCrmFields);
+  }
+  if (cfg.eventFunnel && cfg.highlyQualifiedCount) {
+    const sorted = [...raw].sort((a, b) => (b.qualificationScore || 0) - (b.score || 0));
+    const highlyIds = new Set(sorted.slice(0, cfg.highlyQualifiedCount).map((b) => b.id));
+    raw = raw.map((b) => ({
+      ...b,
+      confidence: highlyIds.has(b.id) ? "High" : (b.confidence === "High" ? "Medium" : b.confidence),
+    }));
+  }
   return raw.map((b) => withCrmFields(stripScoring({ ...b })));
 }
 
@@ -211,11 +222,12 @@ function computeRunMetrics(brokers) {
 
   return {
     totalContacts: cfg.contactsProcessed,
-    qualifiedBrokers: cfg.qualifiedCount,
-    priorityTargets: isP2() ? (priority || cfg.priorityCount) : cfg.priorityCount,
+    qualifiedBrokers: brokers.length || cfg.qualifiedCount,
+    highlyQualified: highConf,
+    priorityTargets: isP2() ? priority : cfg.priorityCount,
     averageScore: avg,
-    highConfidence: highConf || cfg.highConfidenceCount,
-    reviewRequired: review || cfg.reviewRequiredCount,
+    highConfidence: highConf,
+    reviewRequired: review,
   };
 }
 
@@ -247,46 +259,39 @@ function isContactSentinel(value) {
   return !s || CONTACT_SENTINEL_PATTERN.test(s);
 }
 
-function maskSeedHash(seed, field) {
-  const str = String(seed || "") + ":" + field;
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
-const MASK_WORDS = ["lara", "kven", "mshra", "brtn", "elna", "vasq", "marc", "tmas", "wrgt", "drek", "fona", "greg", "hann", "ian", "jlia", "kevn", "cbre", "jll", "nmrk"];
-
-function scrambleToken(seed, field) {
-  const h = maskSeedHash(seed, field);
-  return MASK_WORDS[h % MASK_WORDS.length] + " " + MASK_WORDS[(h >> 4) % MASK_WORDS.length];
-}
-
-function maskContactEmail(email, seed) {
+function displayContactEmail(email) {
   const s = String(email == null ? "" : email).trim();
-  if (!s || isContactSentinel(s)) return s || "Not publicly listed";
-  return scrambleToken(seed, "email").replace(/\s+/g, "") + "@enc";
+  return s || "Not publicly listed";
 }
 
-function maskContactPhone(phone, seed) {
+function displayContactPhone(phone) {
   const s = String(phone == null ? "" : phone).trim();
-  if (!s || isContactSentinel(s)) return s || "Not publicly listed";
-  const p = scrambleToken(seed, "phone").split(" ");
-  return "(•••) " + p[0] + "-" + p[1];
+  return s || "Not publicly listed";
 }
 
-function maskLinkedIn(url, seed) {
+function displayContactLinkedIn(url) {
   const s = String(url == null ? "" : url).trim();
-  if (!s || isContactSentinel(s)) return s || "Not publicly listed";
-  if (!s.toLowerCase().startsWith("http")) return s;
-  return "linkedin.com/in/" + scrambleToken(seed, "linkedin").replace(/\s+/g, "-");
+  return s || "Not publicly listed";
 }
 
-function formatMaskedEmailHtml(email, seed) {
-  return `<span class="text-muted">${maskContactEmail(email, seed)}</span>`;
+function formatContactEmailHtml(email) {
+  return `<span class="text-muted">${displayContactEmail(email)}</span>`;
 }
 
-function formatMaskedLinkedInHtml(url, seed) {
-  return `<span class="text-muted">${maskLinkedIn(url, seed)}</span>`;
+function formatContactLinkedInHtml(url) {
+  const v = displayContactLinkedIn(url);
+  if (/^https?:\/\//i.test(v)) {
+    return `<a href="${v}" target="_blank" rel="noopener" class="text-muted">${v}</a>`;
+  }
+  return `<span class="text-muted">${v}</span>`;
+}
+
+function formatMaskedEmailHtml(email) {
+  return formatContactEmailHtml(email);
+}
+
+function formatMaskedLinkedInHtml(url) {
+  return formatContactLinkedInHtml(url);
 }
 
 function formatEvidenceSourceHtml(source) {
@@ -308,8 +313,8 @@ function formatEvidenceSourceRow(source) {
 
 function formatEvidenceSourcesForExport(sources, seed) {
   return (sources || []).map((s) => {
-    if (/linkedin\.com\/in\//i.test(s.url || "")) return s.label + " (" + maskLinkedIn(s.url, seed) + ")";
-    return s.label + " (" + s.url + ")";
+    if (/linkedin\.com\/in\//i.test(s.url || "")) return s.label + " (" + displayContactLinkedIn(s.url) + ")";
+    return s.label + " (" + (s.url || "") + ")";
   }).join("; ");
 }
 
@@ -393,15 +398,15 @@ function getSalesExportHeaders() {
 function brokerToSalesExportRow(b) {
   const shared = [
     b.name, b.company, b.state, b.lastEmployer || "", b.onlyCreMortgage || "", b.yearsInCre || "",
-    b.volume2025 || "", maskContactEmail(b.email, b.id), maskContactPhone(b.phone, b.id),
-    maskLinkedIn(b.linkedin, b.id), b.activityLevel || "", b.dealSignals || "", b.affiliations || "",
+    b.volume2025 || "", displayContactEmail(b.email), displayContactPhone(b.phone),
+    displayContactLinkedIn(b.linkedin), b.activityLevel || "", b.dealSignals || "", b.affiliations || "",
     b.personalizationHook || "", b.confidence, b.rowStatus
   ];
   if (!isP2()) return shared;
   return [
     b.name, b.company, b.state, b.score ?? "", b.priorityTier || "", b.lastEmployer || "",
     b.onlyCreMortgage || "", b.yearsInCre || "", b.volume2025 || "",
-    maskContactEmail(b.email, b.id), maskContactPhone(b.phone, b.id), maskLinkedIn(b.linkedin, b.id),
+    displayContactEmail(b.email), displayContactPhone(b.phone), displayContactLinkedIn(b.linkedin),
     b.activityLevel || "", b.dealSignals || "", b.affiliations || "", b.personalizationHook || "",
     b.confidence, b.rowStatus
   ];

@@ -1,6 +1,6 @@
 Broker Intelligence & Scoring — CommLoan Demo
 ==============================================
-Build: 17 June 2026 · Sales-First V1 · P2 Profile
+Build: 18 June 2026 · Sales-First V1 · Accuracy Fix
 P1 Verify & Enrich · P2 Prospect & Score
 
 HOW TO OPEN
