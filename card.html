@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Broker Card — CommLoan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header no-print" id="site-header"></header>
+    <main class="main-content">
+      <div class="breadcrumb no-print">
+        <a href="results.html">Results</a><span class="sep">/</span>
+        <a href="#" id="bc-broker">Broker</a><span class="sep">/</span>
+        <span>Broker Card</span>
+      </div>
+
+      <div class="toolbar no-print mb-2">
+        <a href="#" class="btn btn-secondary" id="btn-back">← Back to Broker</a>
+        <button class="btn btn-primary" onclick="window.print()">Print / Save PDF</button>
+      </div>
+
+      <div class="broker-card-print" id="broker-card">
+        <div class="broker-card-header">
+          <div class="flex-between">
+            <div>
+              <h2 id="card-name">—</h2>
+              <p id="card-company">—</p>
+              <p id="card-location" style="margin-top:0.5rem;font-size:0.85rem"></p>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:0.75rem;opacity:0.8">CommLoan Broker Card</div>
+              <div style="font-size:0.75rem;opacity:0.8" id="card-date"></div>
+            </div>
+          </div>
+        </div>
+        <div class="broker-card-body">
+          <div class="broker-card-score">
+            <div>
+              <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Broker Score</div>
+              <div style="font-size:2.5rem;font-weight:800" id="card-score" class="score-high">—</div>
+            </div>
+            <div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">Priority Tier</div>
+              <span class="badge badge-priority" id="card-tier" style="font-size:0.9rem;padding:0.35rem 1rem">—</span>
+            </div>
+            <div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">Activity</div>
+              <div id="card-activity" style="font-weight:600;margin-top:0.25rem">—</div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap:1.5rem">
+            <div>
+              <h3 style="margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted)">Contact</h3>
+              <div id="card-contact"></div>
+            </div>
+            <div>
+              <h3 style="margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted)">CRE Profile</h3>
+              <div id="card-profile"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:1.5rem;padding:1rem;background:var(--primary-light);border-radius:8px;border-left:4px solid var(--primary)">
+            <div style="font-size:0.75rem;font-weight:600;color:var(--primary);margin-bottom:0.35rem">PERSONALIZATION HOOK</div>
+            <div id="card-hook" style="font-size:0.95rem;font-style:italic">—</div>
+          </div>
+
+          <div style="margin-top:1.25rem">
+            <h3 style="margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted)">Score Breakdown</h3>
+            <div id="card-breakdown"></div>
+          </div>
+
+          <div style="margin-top:1.25rem;font-size:0.75rem;color:var(--text-muted);border-top:1px solid var(--border);padding-top:1rem">
+            <strong>Deal Signals:</strong> <span id="card-deals"></span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/demo-scenarios.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/broker-roster-data.js"></script>
+  <script src="js/directory-data.js"></script>
+  <script src="js/event-data.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireRun() || !isP2()) {
+      window.location.href = "results.html";
+      throw new Error("redirect");
+    }
+    renderHeader("card.html");
+
+    const id = getQueryParam("id");
+    const broker = getBrokerById(id);
+    if (!broker) { window.location.href = "results.html"; throw new Error("not found"); }
+
+    document.getElementById("btn-back").href = "broker.html?id=" + broker.id;
+    document.getElementById("bc-broker").href = "broker.html?id=" + broker.id;
+    document.getElementById("bc-broker").textContent = broker.name;
+    document.title = broker.name + " — Broker Card";
+
+    document.getElementById("card-name").textContent = broker.name;
+    document.getElementById("card-company").textContent = broker.company;
+    document.getElementById("card-location").textContent = broker.city + ", " + broker.state;
+    document.getElementById("card-date").textContent = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+    const scoreEl = document.getElementById("card-score");
+    scoreEl.textContent = broker.score;
+    scoreEl.className = getScoreColorClass(broker.score);
+
+    const tierEl = document.getElementById("card-tier");
+    tierEl.textContent = broker.priorityTier;
+    tierEl.className = "badge " + getTierBadgeClass(broker.priorityTier);
+
+    document.getElementById("card-activity").textContent = broker.activityLevel + " · " + broker.volume2025;
+
+    function line(label, val) {
+      return `<div style="font-size:0.875rem;margin-bottom:0.4rem"><span style="color:var(--text-muted)">${label}:</span> ${val}</div>`;
+    }
+
+    document.getElementById("card-contact").innerHTML = [
+      line("Email", formatMaskedEmailHtml(broker.email, broker.id)),
+      line("Phone", `<span class="text-muted">${maskContactPhone(broker.phone, broker.id)}</span>`),
+      line("LinkedIn", formatMaskedLinkedInHtml(broker.linkedin, broker.id)),
+    ].join("");
+
+    document.getElementById("card-profile").innerHTML = [
+      line("Years in CRE", broker.yearsInCre),
+      line("Affiliations", broker.affiliations),
+      line("Confidence", broker.confidence),
+    ].join("");
+
+    document.getElementById("card-hook").textContent = '"' + broker.personalizationHook + '"';
+    document.getElementById("card-deals").textContent = broker.dealSignals;
+
+    document.getElementById("card-breakdown").innerHTML = SCORE_CRITERIA.map((c) => {
+      const pts = broker.scoreBreakdown[c.key];
+      const pct = (pts / c.max) * 100;
+      return `<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;font-size:0.8rem">
+        <span style="min-width:160px">${c.label}</span>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%"></div></div>
+        <strong style="min-width:40px;text-align:right">${pts}/${c.max}</strong>
+      </div>`;
+    }).join("");
+  </script>
+</body>
+</html>

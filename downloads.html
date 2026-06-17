@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Downloads — CommLoan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header" id="site-header"></header>
+    <main class="main-content wide">
+      <h1 class="page-title">Downloads</h1>
+      <p class="page-subtitle">Generated intelligence reports from your latest AI processing run</p>
+
+      <div class="table-wrap mt-2">
+        <table>
+          <thead>
+            <tr><th>Report Name</th><th>Generated</th><th>Record Count</th><th>Download</th></tr>
+          </thead>
+          <tbody id="downloads-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/demo-scenarios.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/broker-roster-data.js"></script>
+  <script src="js/directory-data.js"></script>
+  <script src="js/event-data.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireRun()) throw new Error("redirect");
+    renderHeader("downloads.html");
+
+    const cfg = AppState.getScenarioConfig();
+    const meta = AppState.getRunMeta();
+    const brokers = AppState.getBrokers();
+    const m = computeRunMetrics(brokers);
+    const genTime = new Date(meta.generatedAt || Date.now()).toLocaleString();
+
+    const scenario = AppState.getScenario();
+    const reports = [
+      { name: "Research Pack", count: m.qualifiedBrokers, action: exportResearchPack, always: true },
+      { name: "Priority Broker Report", count: m.priorityTargets, action: exportPriorityReport, show: m.qualifiedBrokers > 0 && isP2() },
+      { name: "Directory Intelligence Report", count: cfg.contactsProcessed, action: exportDirectoryReport, show: scenario === "directory" },
+      { name: "Event Prospect Report", count: cfg.contactsProcessed, action: exportEventReport, show: scenario === "event" },
+      { name: "Executive Dashboard Export", count: m.totalContacts, action: exportDashboardSummary, always: true },
+    ];
+
+    document.getElementById("downloads-body").innerHTML = reports
+      .filter((r) => r.always || r.show)
+      .map((r) => `
+        <tr>
+          <td><strong>${r.name}</strong></td>
+          <td>${genTime}</td>
+          <td>${formatCount(r.count)}</td>
+          <td><button class="btn btn-primary btn-sm" data-action="${r.name}">Download</button></td>
+        </tr>
+      `).join("");
+
+    document.querySelectorAll("[data-action]").forEach((btn) => {
+      const report = reports.find((r) => r.name === btn.dataset.action);
+      btn.addEventListener("click", () => report.action());
+    });
+  </script>
+</body>
+</html>

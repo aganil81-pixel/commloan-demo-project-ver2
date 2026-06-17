@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Broker Intelligence Profile — CommLoan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header" id="site-header"></header>
+    <main class="main-content wide">
+      <div class="flex-between mb-2 no-print">
+        <a href="results.html" class="btn btn-secondary">← Back to Results</a>
+        <a href="#" class="btn btn-primary hidden" id="btn-card">Broker Card →</a>
+      </div>
+
+      <div class="profile-header">
+        <div>
+          <h1 class="page-title" id="broker-name">—</h1>
+          <p class="page-subtitle" id="broker-company">—</p>
+        </div>
+        <div class="profile-badges" id="profile-badges"></div>
+      </div>
+
+      <div class="profile-detail-grid">
+        <div class="card">
+          <h3 class="profile-card-title">Identity &amp; Verification</h3>
+          <div id="sec-identity"></div>
+        </div>
+        <div class="card">
+          <h3 class="profile-card-title">Contact Intelligence</h3>
+          <div id="sec-contact" class="contact-intel-list"></div>
+        </div>
+        <div class="card">
+          <h3 class="profile-card-title">Sales Intelligence</h3>
+          <div id="sec-sales"></div>
+        </div>
+        <div class="card hidden" id="card-score">
+          <h3 class="profile-card-title">Score Breakdown</h3>
+          <p class="text-sm text-muted mb-2">7-criterion CommLoan Broker Avatar model</p>
+          <div class="score-total mb-2" id="sec-score-header"></div>
+          <ul class="score-breakdown" id="score-breakdown"></ul>
+        </div>
+        <div class="card profile-full-width">
+          <h3 class="profile-card-title">Evidence</h3>
+          <p class="text-sm text-muted mb-2" id="evidence-notes"></p>
+          <div id="sec-evidence"></div>
+        </div>
+        <div class="card profile-full-width hidden review-banner" id="review-banner">
+          <h3 class="profile-card-title">Manual Review Required</h3>
+          <p id="review-reason"></p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/demo-scenarios.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/broker-roster-data.js"></script>
+  <script src="js/directory-data.js"></script>
+  <script src="js/event-data.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireRun()) throw new Error("redirect");
+    if (!isP2()) { window.location.href = "results.html"; throw new Error("redirect"); }
+    renderHeader("broker.html");
+
+    const id = getQueryParam("id");
+    const broker = getBrokerById(id);
+    if (!broker) { window.location.href = "results.html"; throw new Error("not found"); }
+
+    const p2 = isP2();
+
+    document.getElementById("broker-name").textContent = broker.name;
+    document.getElementById("broker-company").textContent =
+      broker.company + " · " + (broker.city || "") + (broker.city ? ", " : "") + broker.state;
+    document.title = broker.name + " — CommLoan";
+
+    if (p2) {
+      document.getElementById("btn-card").classList.remove("hidden");
+      document.getElementById("btn-card").href = "card.html?id=" + encodeURIComponent(broker.id);
+      document.getElementById("card-score").classList.remove("hidden");
+    }
+
+    let badges = confidenceBadge(broker.confidence) + " " + statusBadge(broker.rowStatus);
+    if (p2 && broker.score != null) {
+      badges += ` <span class="badge badge-high">Score: <span class="${getScoreColorClass(broker.score)}">${broker.score}</span>`;
+      if (broker.priorityTier) badges += ` · ${broker.priorityTier}`;
+      badges += "</span>";
+    }
+    document.getElementById("profile-badges").innerHTML = badges;
+
+    function infoRow(label, value) {
+      return `<div class="info-row"><span class="info-label">${label}</span><span class="info-value">${value || "—"}</span></div>`;
+    }
+
+    document.getElementById("sec-identity").innerHTML = [
+      infoRow("Last Employer", broker.lastEmployer),
+      infoRow("Only CRE Mortgage", broker.onlyCreMortgage),
+      infoRow("Years in CRE", broker.yearsInCre),
+      infoRow("Est. Volume 2025", broker.volume2025),
+    ].join("");
+
+    document.getElementById("sec-contact").innerHTML = [
+      `<div class="contact-line"><span class="contact-icon">✉</span>${formatMaskedEmailHtml(broker.email, broker.id)}</div>`,
+      `<div class="contact-line"><span class="contact-icon">☎</span><span class="text-muted">${maskContactPhone(broker.phone, broker.id)}</span></div>`,
+      `<div class="contact-line"><span class="contact-icon">in</span><span class="text-muted">${maskLinkedIn(broker.linkedin, broker.id)}</span></div>`,
+    ].join("");
+
+    document.getElementById("sec-sales").innerHTML = [
+      infoRow("LinkedIn Activity", broker.activityLevel || "—"),
+      infoRow("Deal Signals", broker.dealSignals),
+      infoRow("Affiliations", broker.affiliations),
+      infoRow("Personalization Hook", `<em>"${broker.personalizationHook || "—"}"</em>`),
+    ].join("");
+
+    if (p2 && broker.score != null) {
+      document.getElementById("sec-score-header").innerHTML =
+        `<div class="score-number ${getScoreColorClass(broker.score)}">${broker.score}</div>`;
+      if (broker.scoreBreakdown) {
+        document.getElementById("score-breakdown").innerHTML = SCORE_CRITERIA.map((c) => {
+          const pts = broker.scoreBreakdown[c.key] || 0;
+          const pct = (pts / c.max) * 100;
+          return `<li><span style="min-width:160px">${c.label}</span><div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%"></div></div><strong>${pts}/${c.max}</strong></li>`;
+        }).join("");
+      }
+    }
+
+    document.getElementById("evidence-notes").textContent = broker.evidenceNotes || "";
+    document.getElementById("sec-evidence").innerHTML = (broker.evidenceSources || [])
+      .map((s) => formatEvidenceSourceRow(s)).join("") || '<p class="text-muted">—</p>';
+
+    if (broker.manualReviewFlag) {
+      document.getElementById("review-banner").classList.remove("hidden");
+      document.getElementById("review-reason").textContent = broker.manualReviewReason || "Manual review required.";
+    }
+  </script>
+</body>
+</html>

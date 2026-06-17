@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Broker Intelligence &amp; Scoring — CommLoan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="page-home">
+  <div class="app-shell">
+    <header class="site-header" id="site-header"></header>
+    <main class="main-content">
+      <section class="hero hero-v2">
+        <p class="hero-eyebrow">CommLoan</p>
+        <h1>Broker Intelligence &amp; Scoring</h1>
+        <p class="hero-lead">AI-powered CRE broker research, enrichment, and prioritization for CommLoan outreach campaigns.</p>
+      </section>
+
+      <div id="home-input-section">
+        <div class="mode-cards" id="mode-cards">
+          <div class="mode-card" data-mode="p1" id="mode-p1">
+            <div class="mode-label">Mode P1</div>
+            <h3>Verify &amp; Enrich</h3>
+            <p>Production roster or event attendee verification — enrichment and qualification without scoring emphasis.</p>
+            <ul>
+              <li>Excel, CSV, HTML, public &amp; private URLs</li>
+              <li>Contact verification &amp; enrichment</li>
+              <li>Qualified broker exports</li>
+            </ul>
+          </div>
+          <div class="mode-card" data-mode="p2" id="mode-p2">
+            <div class="mode-label">Mode P2</div>
+            <h3>Prospect &amp; Score</h3>
+            <p>Discover brokers from directories, HTML, or URLs — score against the CommLoan avatar.</p>
+            <ul>
+              <li>Excel, CSV, HTML, public &amp; private URLs</li>
+              <li>7-criterion scoring engine</li>
+              <li>Broker cards &amp; priority tiers</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="home-grid">
+          <div class="card home-upload-card">
+            <h2 class="card-title">Upload File</h2>
+            <div class="upload-zone" id="upload-zone">
+              <div class="upload-icon">📁</div>
+              <p><strong>Drag &amp; drop</strong> or click to browse</p>
+              <p class="text-sm text-muted mt-1" id="file-label">Excel, CSV, or HTML</p>
+              <p class="file-name hidden" id="selected-file"></p>
+              <span class="input-type-badge hidden" id="file-input-badge"></span>
+            </div>
+            <input type="file" id="file-input" accept=".xlsx,.xls,.csv,.html,.htm" class="hidden" />
+            <p class="text-sm text-muted mt-2" id="file-demo-hint">Demo: click to load <em>2026_Brokers_Production.xlsx</em> (P1) or <em>NYU Attendee List.xlsx</em> (P2)</p>
+          </div>
+
+          <div class="card home-url-card">
+            <h2 class="card-title">Enter Website URL</h2>
+            <div class="form-group">
+              <input type="url" class="form-input" id="url-input" placeholder="https://example.com/team or directory URL" />
+            </div>
+            <span class="input-type-badge hidden" id="url-input-badge"></span>
+            <div class="url-login-panel hidden" id="url-login-panel">
+              <button type="button" class="url-login-toggle" id="url-login-toggle" aria-expanded="false">
+                Sign in to access private URL <span class="collapse-icon">▼</span>
+              </button>
+              <div class="url-login-form hidden" id="url-login-form">
+                <div class="form-group">
+                  <label class="text-sm" for="login-email">Email</label>
+                  <input type="email" class="form-input" id="login-email" placeholder="demo@commloan.com" autocomplete="username" />
+                </div>
+                <div class="form-group">
+                  <label class="text-sm" for="login-password">Password</label>
+                  <input type="password" class="form-input" id="login-password" placeholder="demo" autocomplete="current-password" />
+                </div>
+                <div class="flex-between" style="gap:0.5rem;flex-wrap:wrap">
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-url-signin">Sign In</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-demo-signin">Demo Sign In</button>
+                </div>
+                <p class="text-sm text-muted">Or upload saved HTML instead</p>
+                <div class="url-login-success hidden" id="url-login-success">Signed in — you can start processing.</div>
+              </div>
+            </div>
+            <p class="text-sm text-muted mt-2" id="url-demo-hint">Demo: click field to load Walker &amp; Dunlop team page</p>
+          </div>
+        </div>
+
+        <div class="text-center home-cta">
+          <button class="btn btn-primary btn-lg" id="btn-start" disabled>Start →</button>
+          <p class="text-sm text-muted mt-2">Select a mode, then upload a file or enter a URL. Source type is detected automatically.</p>
+        </div>
+      </div>
+
+      <div id="inline-processing" class="hidden">
+        <div class="processing-hero">
+          <h2 class="page-title">Processing Your Data</h2>
+          <p class="page-subtitle" id="proc-subtitle">AI is processing your data in the background…</p>
+        </div>
+        <div class="card processing-progress-card">
+          <div class="flex-between mb-1">
+            <span class="text-sm">Overall Progress</span>
+            <span class="text-sm text-muted" id="eta-label">Estimated time remaining: 25s</span>
+          </div>
+          <div class="progress-wrap progress-lg"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+          <p class="text-sm text-muted mt-1" id="progress-pct">0%</p>
+        </div>
+        <div class="card mt-3">
+          <h3 class="mb-2">Status</h3>
+          <ul class="activity-feed" id="activity-feed"></ul>
+        </div>
+        <div class="dynamic-stats mt-3" id="dynamic-stats"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="demo-overlay hidden" id="demo-overlay">
+    <div class="demo-modal">
+      <h2>Enter Demo</h2>
+      <p>Prototype mode — no credentials required. Contact fields use encrypted demo tokens.</p>
+      <button class="btn btn-primary" style="width:100%" id="btn-enter-demo">Enter Demo →</button>
+    </div>
+  </div>
+
+  <script src="js/demo-scenarios.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/broker-roster-data.js"></script>
+  <script src="js/directory-data.js"></script>
+  <script src="js/event-data.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/processing-ui.js"></script>
+  <script>
+    renderHeader("index.html");
+
+    const overlay = document.getElementById("demo-overlay");
+    const btnStart = document.getElementById("btn-start");
+    const fileInput = document.getElementById("file-input");
+    const uploadZone = document.getElementById("upload-zone");
+    const urlInput = document.getElementById("url-input");
+    const cards = document.querySelectorAll(".mode-card");
+    const homeInput = document.getElementById("home-input-section");
+    const inlineProc = document.getElementById("inline-processing");
+    const fileInputBadge = document.getElementById("file-input-badge");
+    const urlInputBadge = document.getElementById("url-input-badge");
+    const urlLoginPanel = document.getElementById("url-login-panel");
+    const urlLoginForm = document.getElementById("url-login-form");
+    const urlLoginToggle = document.getElementById("url-login-toggle");
+    const urlLoginSuccess = document.getElementById("url-login-success");
+    const loginEmail = document.getElementById("login-email");
+    const loginPassword = document.getElementById("login-password");
+
+    let selectedMode = AppState.getMode();
+    let hasFile = false;
+    let fileName = "";
+    let urlAuthenticated = false;
+
+    if (!AppState.isDemo()) overlay.classList.remove("hidden");
+
+    function getInputOpts() {
+      const url = urlInput.value.trim();
+      return {
+        fileName: hasFile ? fileName : "",
+        url: hasFile ? "" : url,
+        hasFile,
+      };
+    }
+
+    function updateInputDetection() {
+      const opts = getInputOpts();
+      const info = detectInputType(opts);
+      const hasInput = hasFile || opts.url;
+
+      fileInputBadge.classList.toggle("hidden", !hasFile);
+      urlInputBadge.classList.toggle("hidden", hasFile || !opts.url);
+
+      if (hasFile) {
+        fileInputBadge.textContent = "Detected: " + info.label;
+      } else if (opts.url) {
+        urlInputBadge.textContent = "Detected: " + info.label;
+      }
+
+      const needsAuth = !hasFile && opts.url && isPrivateUrl(opts.url);
+      urlLoginPanel.classList.toggle("hidden", !needsAuth);
+
+      if (!needsAuth) {
+        urlAuthenticated = false;
+        urlLoginSuccess.classList.add("hidden");
+        urlLoginForm.classList.add("hidden");
+        urlLoginToggle.setAttribute("aria-expanded", "false");
+      } else if (!urlAuthenticated) {
+        urlLoginSuccess.classList.add("hidden");
+      }
+
+      return info;
+    }
+
+    function selectMode(mode, persist) {
+      selectedMode = mode;
+      if (persist !== false) AppState.setMode(mode);
+      cards.forEach((c) => c.classList.toggle("selected", c.dataset.mode === mode));
+      updateReady();
+      btnStart.textContent = mode === "p2" ? "Start P2 — Prospect & Score →" : "Start P1 — Verify & Enrich →";
+    }
+
+    if (selectedMode) selectMode(selectedMode, false);
+    cards.forEach((card) => card.addEventListener("click", () => selectMode(card.dataset.mode)));
+
+    document.getElementById("btn-enter-demo").addEventListener("click", () => {
+      AppState.enterDemo();
+      overlay.classList.add("hidden");
+    });
+
+    function updateReady() {
+      const opts = getInputOpts();
+      const info = updateInputDetection();
+      const needsAuth = info.key === "url_private" && !urlAuthenticated;
+      const hasInput = hasFile || opts.url.length > 0;
+      btnStart.disabled = !selectedMode || !hasInput || needsAuth;
+    }
+
+    urlLoginToggle.addEventListener("click", () => {
+      const open = urlLoginForm.classList.toggle("hidden");
+      urlLoginToggle.setAttribute("aria-expanded", open ? "false" : "true");
+    });
+
+    function clearFile() {
+      hasFile = false;
+      fileName = "";
+      fileInput.value = "";
+      document.getElementById("selected-file").classList.add("hidden");
+      uploadZone.classList.remove("has-file");
+    }
+
+    function performUrlSignIn() {
+      urlAuthenticated = true;
+      AppState.set({ urlAuthenticated: true });
+      urlLoginSuccess.classList.remove("hidden");
+      urlLoginForm.classList.add("hidden");
+      urlLoginToggle.setAttribute("aria-expanded", "false");
+      showToast("Signed in to private URL (demo)");
+      updateReady();
+    }
+
+    document.getElementById("btn-url-signin").addEventListener("click", () => {
+      const email = loginEmail.value.trim();
+      const password = loginPassword.value.trim();
+      if (!email || !password) {
+        showToast("Enter email and password to sign in (demo accepts any values)");
+        return;
+      }
+      performUrlSignIn();
+    });
+
+    document.getElementById("btn-demo-signin").addEventListener("click", () => {
+      loginEmail.value = "demo@commloan.com";
+      loginPassword.value = "demo";
+      performUrlSignIn();
+    });
+
+    uploadZone.addEventListener("click", () => {
+      if (!selectedMode) {
+        showToast("Select P1 or P2 first");
+        return;
+      }
+      fileInput.click();
+      setTimeout(() => {
+        if (!hasFile && selectedMode) {
+          const preset = getDemoPreset(selectedMode, "file");
+          setFile({ name: preset.name });
+        }
+      }, 400);
+    });
+    uploadZone.addEventListener("dragover", (e) => { e.preventDefault(); uploadZone.classList.add("dragover"); });
+    uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("dragover"));
+    uploadZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove("dragover");
+      if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+    function setFile(f) {
+      hasFile = true;
+      fileName = f.name;
+      urlAuthenticated = false;
+      AppState.set({ urlAuthenticated: false });
+      urlInput.value = "";
+      urlLoginSuccess.classList.add("hidden");
+      document.getElementById("selected-file").textContent = f.name;
+      document.getElementById("selected-file").classList.remove("hidden");
+      uploadZone.classList.add("has-file");
+      updateReady();
+    }
+
+    urlInput.addEventListener("focus", () => {
+      if (!selectedMode) {
+        showToast("Select P1 or P2 first");
+        return;
+      }
+      if (!hasFile && !urlInput.value.trim()) {
+        const preset = getDemoPreset(selectedMode, "url");
+        urlInput.value = preset.value;
+        updateReady();
+      }
+    });
+
+    urlInput.addEventListener("input", () => {
+      if (urlInput.value.trim()) clearFile();
+      urlAuthenticated = false;
+      AppState.set({ urlAuthenticated: false });
+      urlLoginSuccess.classList.add("hidden");
+      updateReady();
+    });
+    urlInput.addEventListener("blur", updateReady);
+
+    btnStart.addEventListener("click", () => {
+      if (!AppState.isDemo()) { overlay.classList.remove("hidden"); return; }
+      if (!selectedMode) return;
+      const url = urlInput.value.trim();
+      if (!hasFile && !url) return;
+      if (!hasFile && url && isPrivateUrl(url) && !urlAuthenticated) return;
+
+      const filePreset = selectedMode ? getDemoPreset(selectedMode, "file") : null;
+      const fallbackFile = filePreset ? filePreset.name : "2026_Brokers_Production.xlsx";
+      if (!fileName && !url) setFile({ name: fallbackFile });
+
+      AppState.setMode(selectedMode);
+      startProcessingRun({
+        fileName: fileName || (url ? "" : fallbackFile),
+        url: hasFile ? "" : url,
+        hasFile: hasFile || !url,
+        urlAuthenticated,
+      });
+
+      homeInput.classList.add("hidden");
+      inlineProc.classList.remove("hidden");
+      renderHeader("index.html");
+
+      runInlineProcessing({
+        containerId: "inline-processing",
+        onComplete: () => {
+          setTimeout(() => { window.location.href = "dashboard.html"; }, 2000);
+        },
+      });
+    });
+  </script>
+</body>
+</html>

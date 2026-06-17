@@ -1,0 +1,65 @@
+Broker Intelligence & Scoring — CommLoan Demo
+==============================================
+Build: 17 June 2026 · Sales-First V1 · P2 Profile
+P1 Verify & Enrich · P2 Prospect & Score
+
+HOW TO OPEN
+-----------
+1. Unzip if needed.
+2. Double-click: index.html
+3. No install or login required.
+
+
+RECOMMENDED DEMO PATH
+---------------------
+P1 (list + export only):
+1. Open index.html → Enter Demo → select P1
+2. Upload a file or enter a website URL → Start
+3. Dashboard → Results → Export Result
+
+P2 (list + profile + export):
+1. Open index.html → Enter Demo → select P2
+2. Upload a file or enter a website URL → Start
+3. Dashboard → Results → click a name for broker profile
+4. Profile → Broker Card (optional) → back to Results → Export Result
+
+
+MODES
+-----
+P1 — Verify & Enrich
+  Full enrichment in Results and Export. No profile drill-down.
+
+P2 — Prospect & Score
+  Full enrichment + scoring. Click a name for broker profile and broker card.
+
+
+SCENARIO AUTO-DETECTION
+-----------------------
+• broker_roster — broker/production/2026 xlsx (53 contacts)
+• directory — directory/cref/attendee html or csv (186 → 145 qualified)
+• event — event/nyu/attendee url or file (2,211 → 145 → 25 priority)
+
+
+NAVIGATION
+----------
+Home · Dashboard · Results · Reset Demo
+(P2 only: broker.html, card.html via Results name links)
+
+
+EXPORT
+------
+Results page → Export Result → commloan-export-result.csv (opens in Excel)
+Includes email, phone, LinkedIn, deal signals, personalization, and more.
+
+
+RESET
+-----
+Click Reset Demo in the header to clear localStorage.
+
+
+FILES
+-----
+index.html, dashboard.html, results.html, broker.html, card.html, BUILD.txt
+js/demo-scenarios.js, js/processing-ui.js, js/app.js, js/data.js,
+js/broker-roster-data.js, js/directory-data.js, js/event-data.js, js/scoring.js
+css/styles.css

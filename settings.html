@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — CommLoan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header" id="site-header"></header>
+    <main class="main-content">
+      <h1 class="page-title">Settings</h1>
+      <p class="page-subtitle">Configure advanced processing options (demo display only)</p>
+
+      <div class="card mt-2">
+        <button type="button" class="collapse-trigger" id="advanced-toggle" aria-expanded="false">
+          <span>Advanced Options</span>
+          <span class="collapse-icon">▼</span>
+        </button>
+        <div class="collapse-panel hidden" id="advanced-panel">
+          <form id="settings-form" class="settings-form">
+            <label class="field-block">
+              <span>Maximum Crawl Pages</span>
+              <input type="number" name="maxCrawlPages" class="form-input" min="1" max="500" />
+            </label>
+            <label class="field-block">
+              <span>Pagination</span>
+              <input type="number" name="pagination" class="form-input" min="10" max="100" />
+            </label>
+            <label class="field-block checkbox-row">
+              <input type="checkbox" name="brokerScoring" /> <span>Broker Scoring</span>
+            </label>
+            <label class="field-block checkbox-row">
+              <input type="checkbox" name="contactIntelligence" /> <span>Contact Intelligence</span>
+            </label>
+            <label class="field-block checkbox-row">
+              <input type="checkbox" name="eventDiscovery" /> <span>Event Discovery</span>
+            </label>
+            <label class="field-block">
+              <span>HTML Size Limit (MB)</span>
+              <input type="number" name="htmlSizeLimit" class="form-input" min="1" max="200" />
+            </label>
+            <button type="submit" class="btn btn-primary mt-2">Save Settings</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/demo-scenarios.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireDemo()) throw new Error("redirect");
+    renderHeader("settings.html");
+
+    const form = document.getElementById("settings-form");
+    const settings = getSettings();
+    Object.keys(settings).forEach((key) => {
+      const el = form.elements[key];
+      if (!el) return;
+      if (el.type === "checkbox") el.checked = !!settings[key];
+      else el.value = settings[key];
+    });
+
+    document.getElementById("advanced-toggle").addEventListener("click", () => {
+      const panel = document.getElementById("advanced-panel");
+      const open = panel.classList.toggle("hidden");
+      document.getElementById("advanced-toggle").setAttribute("aria-expanded", String(!open));
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const patch = {};
+      Object.keys(settings).forEach((key) => {
+        const el = form.elements[key];
+        if (!el) return;
+        patch[key] = el.type === "checkbox" ? el.checked : Number(el.value) || el.value;
+      });
+      saveSettings(patch);
+      showToast("Settings saved");
+    });
+  </script>
+</body>
+</html>

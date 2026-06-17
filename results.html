@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Results — CommLoan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header" id="site-header"></header>
+    <main class="main-content wide">
+      <h1 class="page-title">Results</h1>
+      <p class="page-subtitle" id="results-subtitle"></p>
+      <p class="text-sm text-muted mb-2">Prototype enrichment — verify high-value contacts before outreach.</p>
+
+      <div class="toolbar no-print">
+        <div class="toolbar-left">
+          <input type="search" class="search-input" id="search" placeholder="Search contacts…" />
+          <select class="form-select" id="filter-status" style="width:auto">
+            <option value="">All Statuses</option>
+            <option value="Complete">Complete</option>
+            <option value="Partial">Partial</option>
+            <option value="Review Required">Review Required</option>
+          </select>
+          <select class="form-select hidden" id="filter-tier" style="width:auto">
+            <option value="">All Tiers</option>
+            <option value="Priority">Priority</option>
+            <option value="Nurture">Nurture</option>
+            <option value="Low Priority">Low Priority</option>
+          </select>
+          <select class="form-select" id="sort-by" style="width:auto">
+            <option value="name">Sort: Name</option>
+            <option value="company">Sort: Company</option>
+            <option value="state">Sort: State</option>
+          </select>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-secondary btn-sm" id="btn-bulk-export">Export Result</button>
+          <a href="dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>
+          <a href="index.html" class="btn btn-primary btn-sm">New Run</a>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr id="table-head"></tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination-bar no-print" id="pagination"></div>
+    </main>
+  </div>
+
+  <script src="js/demo-scenarios.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/broker-roster-data.js"></script>
+  <script src="js/directory-data.js"></script>
+  <script src="js/event-data.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireRun()) throw new Error("redirect");
+    renderHeader("results.html");
+
+    const p2 = isP2();
+    if (!AppState.getBrokers().length) approveAndLoadBrokers();
+    const brokers = AppState.getBrokers();
+    const cfg = AppState.getScenarioConfig();
+    const PAGE_SIZE = 50;
+    let page = 0;
+    const selected = new Set();
+
+    document.getElementById("results-subtitle").textContent =
+      modeLabel() + " · " + formatCount(cfg.qualifiedCount) + " qualified broker prospects from " + formatCount(cfg.contactsProcessed) + " contacts";
+
+    if (p2) {
+      document.getElementById("filter-tier").classList.remove("hidden");
+      const sortBy = document.getElementById("sort-by");
+      const scoreOpt = document.createElement("option");
+      scoreOpt.value = "score";
+      scoreOpt.textContent = "Sort: Score";
+      sortBy.insertBefore(scoreOpt, sortBy.firstChild);
+      sortBy.value = "score";
+    }
+
+    const sharedCols = [
+      "Name", "Company", "State", "Last Employer", "Only CRE", "Years in CRE", "Est. Volume",
+      "Email", "Phone", "LinkedIn", "Activity", "Deal Signals", "Affiliations", "Personalization Hook",
+      "Confidence", "Status"
+    ];
+    const cols = p2
+      ? ["Name", "Company", "State", "Broker Score", "Priority Tier", "Last Employer", "Only CRE", "Years in CRE", "Est. Volume",
+          "Email", "Phone", "LinkedIn", "Activity", "Deal Signals", "Affiliations", "Personalization Hook",
+          "Confidence", "Status"]
+      : sharedCols;
+
+    document.getElementById("table-head").innerHTML =
+      `<th class="col-check"><input type="checkbox" id="select-all" /></th>` +
+      cols.map((c) => `<th>${c}</th>`).join("");
+
+    function contactCells(b) {
+      return `
+        <td>${formatMaskedEmailHtml(b.email, b.id)}</td>
+        <td><span class="text-muted">${maskContactPhone(b.phone, b.id)}</span></td>
+        <td>${formatMaskedLinkedInHtml(b.linkedin, b.id)}</td>
+      `;
+    }
+
+    function salesCells(b) {
+      const id = encodeURIComponent(b.id);
+      const nameCell = p2
+        ? `<td><a href="broker.html?id=${id}" onclick="event.stopPropagation()"><strong>${b.name}</strong></a></td>`
+        : `<td><strong>${b.name}</strong></td>`;
+      const companyState = `<td>${b.company}</td><td>${b.state}</td>`;
+      const p2Cells = p2
+        ? `<td><span class="${getScoreColorClass(b.score || 0)}">${b.score ?? "—"}</span></td>
+           <td>${tierBadge(b.priorityTier)}</td>`
+        : "";
+      const employerBlock = `
+        <td>${b.lastEmployer || "—"}</td>
+        <td>${b.onlyCreMortgage || "—"}</td>
+        <td>${b.yearsInCre || "—"}</td>
+        <td>${b.volume2025 || "—"}</td>
+      `;
+      const signalsBlock = `
+        <td>${activityBadge(b.activityLevel)}</td>
+        <td class="cell-truncate">${truncateText(b.dealSignals, 100)}</td>
+        <td>${b.affiliations || "—"}</td>
+        <td class="cell-truncate">${truncateText(b.personalizationHook, 100)}</td>
+        <td>${confidenceBadge(b.confidence)}</td>
+        <td>${statusBadge(b.rowStatus)}</td>
+      `;
+      return nameCell + companyState + p2Cells + employerBlock + contactCells(b) + signalsBlock;
+    }
+
+    function getFiltered() {
+      const q = document.getElementById("search").value.toLowerCase();
+      const statusF = document.getElementById("filter-status").value;
+      const tierF = p2 ? document.getElementById("filter-tier").value : "";
+      const sortKey = document.getElementById("sort-by").value;
+      let list = brokers.filter((b) => {
+        const matchQ = !q || [b.name, b.company, b.state, b.title, b.email, b.dealSignals].some((x) => String(x || "").toLowerCase().includes(q));
+        const matchS = !statusF || b.rowStatus === statusF;
+        const matchT = !tierF || b.priorityTier === tierF;
+        return matchQ && matchS && matchT;
+      });
+      return sortBrokers(list, sortKey, sortKey === "score" ? "desc" : "asc");
+    }
+
+    function renderTable() {
+      const filtered = getFiltered();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      if (page >= totalPages) page = totalPages - 1;
+      const slice = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+      document.getElementById("results-body").innerHTML = slice.map((b) => {
+        const id = encodeURIComponent(b.id);
+        const rowAttrs = p2
+          ? `class="clickable" onclick="location.href='broker.html?id=${id}'"`
+          : "";
+        return `<tr ${rowAttrs}>
+          <td><input type="checkbox" class="row-check" data-id="${b.id}" ${selected.has(b.id) ? "checked" : ""} onclick="event.stopPropagation()" /></td>
+          ${salesCells(b)}
+        </tr>`;
+      }).join("");
+
+      document.querySelectorAll(".row-check").forEach((cb) => {
+        cb.addEventListener("change", () => {
+          if (cb.checked) selected.add(cb.dataset.id); else selected.delete(cb.dataset.id);
+        });
+      });
+
+      document.getElementById("pagination").innerHTML =
+        `<span>${filtered.length} records · Page ${page + 1} of ${totalPages}</span>` +
+        `<div class="pagination-btns">` +
+        `<button class="btn btn-ghost btn-sm" id="prev-page" ${page === 0 ? "disabled" : ""}>← Prev</button>` +
+        `<button class="btn btn-ghost btn-sm" id="next-page" ${page >= totalPages - 1 ? "disabled" : ""}>Next →</button>` +
+        `</div>`;
+      document.getElementById("prev-page")?.addEventListener("click", () => { page--; renderTable(); });
+      document.getElementById("next-page")?.addEventListener("click", () => { page++; renderTable(); });
+    }
+
+    document.getElementById("select-all").addEventListener("change", (e) => {
+      getFiltered().slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).forEach((b) => {
+        if (e.target.checked) selected.add(b.id); else selected.delete(b.id);
+      });
+      renderTable();
+    });
+
+    document.getElementById("btn-bulk-export").addEventListener("click", () => {
+      const rows = selected.size ? brokers.filter((b) => selected.has(b.id)) : getFiltered();
+      exportResult(rows);
+    });
+
+    ["search", "filter-status", "filter-tier", "sort-by"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener(id === "search" ? "input" : "change", () => { page = 0; renderTable(); });
+    });
+
+    renderTable();
+  </script>
+</body>
+</html>

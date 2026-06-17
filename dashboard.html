@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Executive Dashboard — CommLoan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header" id="site-header"></header>
+    <main class="main-content wide">
+      <h1 class="page-title">Executive Dashboard</h1>
+      <p class="page-subtitle" id="dash-subtitle"></p>
+
+      <div class="toolbar">
+        <div class="toolbar-left"><span class="badge badge-high" id="mode-badge"></span></div>
+        <div class="toolbar-right">
+          <a href="results.html" class="btn btn-primary btn-sm">View Results &amp; Export →</a>
+        </div>
+      </div>
+
+      <div class="metric-grid" id="kpi-grid"></div>
+
+      <div class="card mt-3" id="summary-card">
+        <h3>Run Summary</h3>
+        <p class="text-sm mt-2" id="summary-text"></p>
+      </div>
+
+      <div class="card hidden mt-3" id="event-panel">
+        <h3>Event Intelligence</h3>
+        <p class="text-sm text-muted mt-1" id="event-funnel-text"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/demo-scenarios.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/broker-roster-data.js"></script>
+  <script src="js/directory-data.js"></script>
+  <script src="js/event-data.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireRun()) throw new Error("redirect");
+    if (!AppState.getProcessingComplete()) { window.location.href = "index.html"; throw new Error("redirect"); }
+    renderHeader("dashboard.html");
+
+    const cfg = AppState.getScenarioConfig();
+    const meta = AppState.getRunMeta();
+    const brokers = AppState.getBrokers();
+    const m = computeRunMetrics(brokers);
+
+    document.getElementById("dash-subtitle").textContent =
+      modeLabel() + " · " + formatCount(m.totalContacts) + " contacts · " +
+      (meta.inputTypeLabel || meta.extractionMethod || meta.sourceLabel || cfg.sourceLabel);
+    document.getElementById("mode-badge").textContent = AppState.getMode().toUpperCase();
+
+    const kpis = [
+      ["Total Contacts", formatCount(m.totalContacts)],
+      ["Qualified Brokers", formatCount(m.qualifiedBrokers)],
+      ["Priority Targets", formatCount(m.priorityTargets)],
+      ...(isP2() ? [["Average Broker Score", m.averageScore]] : []),
+      ["High Confidence Matches", formatCount(m.highConfidence)],
+      ["Review Required", formatCount(m.reviewRequired)],
+    ];
+    document.getElementById("kpi-grid").innerHTML = kpis.map(([l, v]) =>
+      `<div class="stat-card kpi-card"><div class="stat-value">${v}</div><div class="stat-label">${l}</div></div>`
+    ).join("");
+
+    document.getElementById("summary-text").textContent =
+      formatCount(m.totalContacts) + " contacts processed → " +
+      formatCount(m.qualifiedBrokers) + " qualified broker prospects → " +
+      formatCount(m.priorityTargets) + " priority targets. " +
+      "Open Results to review the full sales list, then click Export Result to download a CSV for outreach.";
+
+    if (cfg.eventFunnel) {
+      const panel = document.getElementById("event-panel");
+      panel.classList.remove("hidden");
+      const highlyQ = cfg.highlyQualifiedCount || 82;
+      const evName = cfg.eventName || (typeof EVENT_SUMMARY !== "undefined" ? EVENT_SUMMARY.eventName : "CRE Finance Summit");
+      document.getElementById("event-funnel-text").textContent =
+        evName + ": " + formatCount(cfg.contactsProcessed) + " attendees → " +
+        formatCount(cfg.qualifiedCount) + " broker prospects → " +
+        formatCount(highlyQ) + " qualified → " +
+        formatCount(cfg.priorityCount) + " priority targets";
+    }
+  </script>
+</body>
+</html>

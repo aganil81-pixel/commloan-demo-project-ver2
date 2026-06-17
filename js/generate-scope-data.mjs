@@ -1,0 +1,195 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const CRM = "[INTERNAL — FILL FROM CRM]";
+
+const brokersRaw = JSON.parse(fs.readFileSync(path.join(__dirname, "brokers.raw.json"), "utf8"));
+const extractedBrokers = JSON.parse(
+  fs.readFileSync(
+    path.resolve(__dirname, "../../commloan-prototype/src/data/extracted-brokers.json"),
+    "utf8"
+  )
+);
+
+brokersRaw.forEach((b) => {
+  b.leadSource = CRM;
+  b.fundedVolume = CRM;
+  b.appraisalVolume = CRM;
+});
+
+const EXTRACTED_PROSPECTS = [
+  { id: "pro-001", name: "Elena Vasquez", company: "Vasquez Capital Partners", state: "TX", email: "", phone: "" },
+  { id: "pro-002", name: "Brandon Lee", company: "Lee & Associates Debt", state: "CA", email: "blee@leedebt.com", phone: "" },
+  { id: "pro-003", name: "Caitlin Morgan", company: "Morgan CRE Lending", state: "NY", email: "cmorgan@morgancre.com", phone: "(917) 555-2104" },
+  { id: "pro-004", name: "Derek Walsh", company: "Regional Bank CRE Desk", state: "OH", email: "Not publicly listed", phone: "Not publicly listed" },
+  { id: "pro-005", name: "Fiona Okonkwo", company: "Okonkwo Advisory", state: "GA", email: "fokonkwo@okonkwoadvisory.com", phone: "(404) 555-2281" },
+  { id: "pro-006", name: "Greg Tan", company: "Tanbridge Capital", state: "WA", email: "gtan@tanbridge.com", phone: "(206) 555-2390" },
+  { id: "pro-007", name: "Hannah Price", company: "Price National Lending", state: "IL", email: "hprice@pricenational.com", phone: "(312) 555-2417" },
+  { id: "pro-008", name: "Ian Cooper", company: "Unknown", state: "NC", email: "", phone: "" },
+  { id: "pro-009", name: "Julia Park", company: "Park Multifamily Finance", state: "CO", email: "jpark@parkmf.com", phone: "(303) 555-2552" },
+  { id: "pro-010", name: "Kevin Marsh", company: "Marsh Commercial Lending", state: "FL", email: "Not publicly listed", phone: "(305) 555-2668" },
+];
+
+const PROSPECTS_RAW = [
+  {
+    id: "pro-001", name: "Elena Vasquez", company: "Vasquez Capital Partners", state: "TX", city: "Austin",
+    email: "evasquez@vasquezcapital.com", phone: "(512) 555-2011", lastEmployer: "Vasquez Capital Partners",
+    onlyCreMortgage: "Yes", yearsInCre: "9", volume2025: "$120M",
+    linkedin: "https://linkedin.com/in/elena-vasquez-cre", activityLevel: "High",
+    dealSignals: "$28M Austin multifamily bridge (Feb 2025); CREF Summit 2025 attendee",
+    affiliations: "MBA, ULI", personalizationHook: "CREF Summit 2025 attendee — recently closed $28M Austin multifamily bridge.",
+    confidence: "High", evidenceNotes: "Independent firm website and CREF attendee list.",
+    manualReviewFlag: false, manualReviewReason: "", rowStatus: "Complete",
+    scoreInputs: { fullTimeCre: true, activeDealmaker: true, independent: true, nationalFocus: false, usesTechnology: true, strongNetwork: true, contentCreator: true, dealVolumeMedium: true },
+    evidenceSources: [{ label: "Vasquez Capital Team", url: "https://www.vasquezcapital.com/team/elena", tier: 1 }],
+  },
+  {
+    id: "pro-002", name: "Brandon Lee", company: "Lee & Associates Debt", state: "CA", city: "San Diego",
+    email: "blee@leedebt.com", phone: "Not publicly listed", lastEmployer: "Lee & Associates",
+    onlyCreMortgage: "Yes", yearsInCre: "6", volume2025: "$65M",
+    linkedin: "https://linkedin.com/in/brandon-lee-cre", activityLevel: "Medium",
+    dealSignals: "$14M retail center permanent loan (Nov 2024)",
+    affiliations: "ICSC", personalizationHook: "Recently closed a $14M retail center permanent loan in San Diego.",
+    confidence: "Medium", evidenceNotes: "Lee & Associates bio page; volume partially disclosed.",
+    manualReviewFlag: false, manualReviewReason: "", rowStatus: "Partial",
+    scoreInputs: { fullTimeCre: true, activeDealmaker: true, independent: false, nationalFocus: false, usesTechnology: false, strongNetwork: false, contentCreator: false, dealVolumeMedium: true },
+    evidenceSources: [{ label: "Lee & Associates", url: "https://www.lee-associates.com/people/brandon-lee", tier: 1 }],
+  },
+  {
+    id: "pro-003", name: "Caitlin Morgan", company: "Morgan CRE Lending", state: "NY", city: "New York",
+    email: "cmorgan@morgancre.com", phone: "(917) 555-2104", lastEmployer: "Morgan CRE Lending",
+    onlyCreMortgage: "Yes", yearsInCre: "15", volume2025: "$310M+",
+    linkedin: "https://linkedin.com/in/caitlin-morgan-cre", activityLevel: "High",
+    dealSignals: "$72M Manhattan office refinancing (Jan 2025); MBA CRE Finance Forum speaker",
+    affiliations: "MBA, CCIM, SIOR", personalizationHook: "Speaker at MBA CRE Finance Forum 2024.",
+    confidence: "High", evidenceNotes: "Firm site, MBA speaker listing, press release.",
+    manualReviewFlag: false, manualReviewReason: "", rowStatus: "Complete",
+    scoreInputs: { fullTimeCre: true, activeDealmaker: true, independent: true, nationalFocus: true, usesTechnology: true, strongNetwork: true, contentCreator: true, dealVolumeHigh: true },
+    evidenceSources: [{ label: "Morgan CRE Lending", url: "https://www.morgancrelending.com/team/caitlin", tier: 1 }],
+  },
+  {
+    id: "pro-004", name: "Derek Walsh", company: "Regional Bank CRE Desk", state: "OH", city: "Cleveland",
+    email: "Not publicly listed", phone: "Not publicly listed", lastEmployer: "Regional Bank",
+    onlyCreMortgage: "Mixed", yearsInCre: "12", volume2025: "Not publicly disclosed",
+    linkedin: "Unverified — manual check", activityLevel: "Low",
+    dealSignals: "No recent deal signals found in last 12 months",
+    affiliations: "MBA", personalizationHook: "No personalization signal found.",
+    confidence: "Low", evidenceNotes: "Only Tier 3 directory mention; W-2 bank employee signals.",
+    manualReviewFlag: true, manualReviewReason: "Low confidence; mixed CRE/residential role",
+    rowStatus: "Review Required",
+    scoreInputs: { fullTimeCre: false, activeDealmaker: false, independent: false, nationalFocus: false, usesTechnology: false, strongNetwork: false, contentCreator: false },
+    evidenceSources: [{ label: "CRE Directory", url: "https://www.loopnet.com/commercial-brokers/derek-walsh", tier: 3 }],
+  },
+  {
+    id: "pro-005", name: "Fiona Okonkwo", company: "Okonkwo Advisory", state: "GA", city: "Atlanta",
+    email: "fokonkwo@okonkwoadvisory.com", phone: "(404) 555-2281", lastEmployer: "Unknown",
+    onlyCreMortgage: "Unverified — Manual Review", yearsInCre: "Unknown", volume2025: "Unknown",
+    linkedin: "https://linkedin.com/in/fiona-okonkwo", activityLevel: "Unknown",
+    dealSignals: "Conflicting employer data across sources",
+    affiliations: "None identified", personalizationHook: "No personalization signal found.",
+    confidence: "Low", evidenceNotes: "Name collision — two brokers with same name in Georgia.",
+    manualReviewFlag: true, manualReviewReason: "Identity collision — conflicting sources",
+    rowStatus: "Review Required",
+    scoreInputs: { fullTimeCre: true, activeDealmaker: false, independent: true, nationalFocus: false, usesTechnology: false, strongNetwork: false, contentCreator: false },
+    evidenceSources: [{ label: "LinkedIn", url: "https://linkedin.com/in/fiona-okonkwo", tier: 2 }],
+  },
+  {
+    id: "pro-006", name: "Greg Tan", company: "Tanbridge Capital", state: "WA", city: "Seattle",
+    email: "gtan@tanbridge.com", phone: "(206) 555-2390", lastEmployer: "Tanbridge Capital",
+    onlyCreMortgage: "Yes", yearsInCre: "8", volume2025: "$95M",
+    linkedin: "https://linkedin.com/in/greg-tan-cre", activityLevel: "Medium",
+    dealSignals: "$19M industrial acquisition loan (Sep 2024)",
+    affiliations: "MBA, ULI", personalizationHook: "Recently closed a $19M industrial acquisition loan in Seattle.",
+    confidence: "High", evidenceNotes: "Tanbridge team page verified.",
+    manualReviewFlag: false, manualReviewReason: "", rowStatus: "Complete",
+    scoreInputs: { fullTimeCre: true, activeDealmaker: true, independent: false, nationalFocus: false, usesTechnology: true, strongNetwork: true, contentCreator: false, dealVolumeMedium: true },
+    evidenceSources: [{ label: "Tanbridge Capital", url: "https://www.tanbridge.com/team/greg-tan", tier: 1 }],
+  },
+  {
+    id: "pro-007", name: "Hannah Price", company: "Price National Lending", state: "IL", city: "Chicago",
+    email: "hprice@pricenational.com", phone: "(312) 555-2417", lastEmployer: "Price National Lending",
+    onlyCreMortgage: "Yes", yearsInCre: "19", volume2025: "$420M+",
+    linkedin: "https://linkedin.com/in/hannah-price-cre", activityLevel: "High",
+    dealSignals: "$88M Midwest portfolio refinancing (Mar 2025); national lender panelist",
+    affiliations: "CCIM, MBA, SIOR", personalizationHook: "Panelist on national lender relationships at MBA conference.",
+    confidence: "High", evidenceNotes: "Firm bio, MBA panel listing, press.",
+    manualReviewFlag: false, manualReviewReason: "", rowStatus: "Complete",
+    scoreInputs: { fullTimeCre: true, activeDealmaker: true, independent: true, nationalFocus: true, usesTechnology: true, strongNetwork: true, contentCreator: true, dealVolumeHigh: true },
+    evidenceSources: [{ label: "Price National Lending", url: "https://www.pricenational.com/team/hannah", tier: 1 }],
+  },
+  {
+    id: "pro-008", name: "Ian Cooper", company: "Unknown", state: "NC", city: "Charlotte",
+    email: "Not publicly listed", phone: "Not publicly listed", lastEmployer: "Unknown",
+    onlyCreMortgage: "Unknown", yearsInCre: "Unknown", volume2025: "Unknown",
+    linkedin: "Not Publicly Listed", activityLevel: "Unknown",
+    dealSignals: "No deal signals found", affiliations: "None identified",
+    personalizationHook: "No personalization signal found.",
+    confidence: "Low", evidenceNotes: "Only Tier 3 aggregator hit; identity unverified.",
+    manualReviewFlag: true, manualReviewReason: "Identity unverified — only Tier 3 source",
+    rowStatus: "No Match",
+    scoreInputs: { fullTimeCre: false, activeDealmaker: false, independent: false, nationalFocus: false, usesTechnology: false, strongNetwork: false, contentCreator: false },
+    evidenceSources: [{ label: "CRE Aggregator", url: "https://www.loopnet.com/commercial-brokers/ian-cooper", tier: 3 }],
+  },
+  {
+    id: "pro-009", name: "Julia Park", company: "Park Multifamily Finance", state: "CO", city: "Denver",
+    email: "jpark@parkmf.com", phone: "(303) 555-2552", lastEmployer: "Park Multifamily Finance",
+    onlyCreMortgage: "Yes", yearsInCre: "5", volume2025: "$48M",
+    linkedin: "https://linkedin.com/in/julia-park-cre", activityLevel: "Medium",
+    dealSignals: "$11M Denver multifamily agency loan (Jun 2024)",
+    affiliations: "MBA", personalizationHook: "Recently closed an $11M Denver multifamily agency loan.",
+    confidence: "Medium", evidenceNotes: "Company site and Freddie Mac lender list.",
+    manualReviewFlag: false, manualReviewReason: "", rowStatus: "Complete",
+    scoreInputs: { fullTimeCre: true, activeDealmaker: true, independent: false, nationalFocus: false, usesTechnology: true, strongNetwork: false, contentCreator: false },
+    evidenceSources: [{ label: "Park Multifamily Finance", url: "https://www.parkmf.com/team/julia", tier: 1 }],
+  },
+  {
+    id: "pro-010", name: "Kevin Marsh", company: "Marsh Commercial Lending", state: "FL", city: "Tampa",
+    email: "Not publicly listed", phone: "(305) 555-2668", lastEmployer: "Marsh Commercial Lending",
+    onlyCreMortgage: "Yes", yearsInCre: "4", volume2025: "Not publicly disclosed",
+    linkedin: "https://linkedin.com/in/kevin-marsh-cre", activityLevel: "Low",
+    dealSignals: "No recent deal signals found in last 12 months",
+    affiliations: "None identified", personalizationHook: "No personalization signal found.",
+    confidence: "Medium", evidenceNotes: "LinkedIn confirms role; limited public deal data.",
+    manualReviewFlag: false, manualReviewReason: "", rowStatus: "Partial",
+    scoreInputs: { fullTimeCre: true, activeDealmaker: false, independent: false, nationalFocus: false, usesTechnology: false, strongNetwork: false, contentCreator: false },
+    evidenceSources: [{ label: "LinkedIn Profile", url: "https://linkedin.com/in/kevin-marsh-cre", tier: 2 }],
+  },
+];
+
+const out = `const CRM_PLACEHOLDER = ${JSON.stringify(CRM)};
+
+const EXTRACTED_BROKERS = ${JSON.stringify(extractedBrokers, null, 2)};
+
+const EXTRACTED_PROSPECTS = ${JSON.stringify(EXTRACTED_PROSPECTS, null, 2)};
+
+const BROKERS_RAW = ${JSON.stringify(brokersRaw, null, 2)};
+
+const PROSPECTS_RAW = ${JSON.stringify(PROSPECTS_RAW, null, 2)};
+`;
+
+fs.copyFileSync(
+  path.resolve(__dirname, "../../commloan-prototype/src/data/brokers.json"),
+  path.join(__dirname, "brokers.raw.json")
+);
+const brokersRaw2 = JSON.parse(fs.readFileSync(path.join(__dirname, "brokers.raw.json"), "utf8"));
+brokersRaw2.forEach((b) => {
+  b.leadSource = CRM;
+  b.fundedVolume = CRM;
+  b.appraisalVolume = CRM;
+});
+
+const out2 = `const CRM_PLACEHOLDER = ${JSON.stringify(CRM)};
+
+const EXTRACTED_BROKERS = ${JSON.stringify(extractedBrokers, null, 2)};
+
+const EXTRACTED_PROSPECTS = ${JSON.stringify(EXTRACTED_PROSPECTS, null, 2)};
+
+const BROKERS_RAW = ${JSON.stringify(brokersRaw2, null, 2)};
+
+const PROSPECTS_RAW = ${JSON.stringify(PROSPECTS_RAW, null, 2)};
+`;
+
+fs.writeFileSync(path.join(__dirname, "data.js"), out2);
+console.log("data.js generated with P1 CRM fields and P2 prospect dataset");
